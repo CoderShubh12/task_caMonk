@@ -5,17 +5,23 @@ import Button from "../components/Button";
 interface TestScreenProps {
   questions: QuestionData[];
   onNextQuestion: (answers: string[]) => void;
+  onShowResults: (finalAnswers: string[]) => void;
   autoAdvance: boolean;
   currentQuestionIndex: number;
   questionsCompleted: number;
+  totalQuestions: number;
+  onQuit: () => void;
 }
 
 const TestScreen: React.FC<TestScreenProps> = ({
   questions,
   onNextQuestion,
+  onShowResults,
   autoAdvance,
   currentQuestionIndex,
   questionsCompleted,
+  totalQuestions,
+  onQuit,
 }) => {
   const currentQuestion = questions[0];
   const blanksCount = useMemo(
@@ -31,10 +37,25 @@ const TestScreen: React.FC<TestScreenProps> = ({
     currentQuestion?.options || []
   );
   const [currentBlankIndex, setCurrentBlankIndex] = useState(0);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [isQuitModalVisible, setIsQuitModalVisible] = useState(false);
+
+  const handleQuitClick = () => {
+    setIsQuitModalVisible(true);
+  };
+
+  const handleConfirmQuit = () => {
+    setIsQuitModalVisible(false);
+    onQuit();
+  };
+
+  const handleCancelQuit = () => {
+    setIsQuitModalVisible(false);
+  };
 
   useEffect(() => {
     let timerId: number | undefined;
-    if (autoAdvance && currentQuestion) {
+    if (autoAdvance && currentQuestion && !isAnswered) {
       setTimeLeft(30);
       timerId = setInterval(() => {
         setTimeLeft((prevTime) => prevTime - 1);
@@ -46,31 +67,44 @@ const TestScreen: React.FC<TestScreenProps> = ({
         clearInterval(timerId);
       }
     };
-  }, [autoAdvance, currentQuestion?.questionId]);
+  }, [autoAdvance, currentQuestion?.questionId, isAnswered]);
 
   useEffect(() => {
-    if (autoAdvance && timeLeft === 0) {
+    if (autoAdvance && timeLeft === 0 && !isAnswered) {
       if (intervalId) {
         clearInterval(intervalId);
       }
-      handleNextQuestion();
+      if (currentQuestionIndex === totalQuestions - 1) {
+        onShowResults(selectedWords);
+      } else {
+        handleNextQuestion();
+      }
       setTimeLeft(30);
     }
-  }, [autoAdvance, timeLeft, onNextQuestion, intervalId, selectedWords]);
+  }, [
+    autoAdvance,
+    timeLeft,
+    onNextQuestion,
+    onShowResults,
+    intervalId,
+    selectedWords,
+    isAnswered,
+    currentQuestionIndex,
+    totalQuestions,
+  ]);
 
   useEffect(() => {
     setSelectedWords(Array(blanksCount).fill(""));
     setAvailableOptions(currentQuestion?.options || []);
     setCurrentBlankIndex(0);
+    setIsAnswered(false);
   }, [currentQuestion?.questionId, blanksCount, currentQuestion?.options]);
 
   const handleWordSelect = (word: string) => {
     const newSelectedWords = [...selectedWords];
     const currentWordInBlank = newSelectedWords[currentBlankIndex];
 
-    // If the selected word is not already in the current blank
     if (currentWordInBlank !== word) {
-      // If there was a word in the current blank, add it back to available options
       if (currentWordInBlank) {
         setAvailableOptions((prevOptions) => [
           ...prevOptions,
@@ -125,6 +159,7 @@ const TestScreen: React.FC<TestScreenProps> = ({
 
   const handleNextQuestion = () => {
     if (allBlanksFilled) {
+      setIsAnswered(true);
       onNextQuestion(selectedWords);
     } else {
       console.log("Please fill in all the blanks.");
@@ -156,18 +191,46 @@ const TestScreen: React.FC<TestScreenProps> = ({
       <div className="flex justify-between items-center">
         <div className="text-lg text-gray-700">{timeLeft}</div>
         <Button
-          onClick={() => {
-            console.log("Quit button clicked");
-          }}
+          onClick={handleQuitClick}
           className="border border-gray-300 text-gray-700 hover:bg-gray-100"
         >
           Quit
         </Button>
       </div>
 
+      {isQuitModalVisible && (
+        <div className="fixed inset-0 flex justify-center items-center">
+          <div className="bg-amber-100 p-6 rounded-md shadow-md w-96">
+            {" "}
+            {/* Increased width */}
+            <p className="text-lg mb-4">Are you sure you want to quit?</p>
+            <div className="flex justify-end gap-4">
+              {" "}
+              {/* Increased gap */}
+              <Button
+                onClick={handleCancelQuit}
+                className="border border-gray-300 text-gray-700 hover:bg-gray-100 text-base py-2 px-4"
+              >
+                {" "}
+                {/* Increased text size and padding */}
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmQuit}
+                className="bg-red-500 hover:bg-red-600 text-white text-base py-2 px-4"
+              >
+                {" "}
+                {/* Increased text size and padding */}
+                Quit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <div className="flex gap-2 sm:gap-3 mb-4 justify-center">
-          {[...Array(10)].map((_, index) => (
+          {[...Array(totalQuestions)].map((_, index) => (
             <div
               key={index}
               className={`h-2 rounded-md ${
@@ -206,9 +269,9 @@ const TestScreen: React.FC<TestScreenProps> = ({
       <div className="mt-auto flex justify-center">
         <Button
           onClick={handleNextQuestion}
-          disabled={!allBlanksFilled}
+          disabled={!allBlanksFilled || isAnswered}
           className={`${
-            allBlanksFilled
+            allBlanksFilled && !isAnswered
               ? "bg-blue-500 hover:bg-blue-600 text-white"
               : "bg-gray-400 cursor-not-allowed text-white"
           }`}

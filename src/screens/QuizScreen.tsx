@@ -54,6 +54,13 @@ const QuizScreen: React.FC = () => {
     }
   };
 
+  const handleShowResults = (finalAnswers: string[]) => {
+    const newAnswers = [...userAnswers];
+    newAnswers[currentQuestionIndex] = finalAnswers;
+    setUserAnswers(newAnswers);
+    setQuizFinished(true);
+  };
+
   const handleRestartQuiz = () => {
     setCurrentQuestionIndex(0);
     setQuestionsCompleted(0);
@@ -101,8 +108,11 @@ const QuizScreen: React.FC = () => {
             currentQuestionIndex={currentQuestionIndex}
             questions={[questions[currentQuestionIndex]]}
             onNextQuestion={handleAnswerSubmit}
+            onShowResults={handleShowResults} // Pass the new prop
             questionsCompleted={questionsCompleted}
             autoAdvance={true}
+            totalQuestions={questions.length} // Pass the total number of questions
+            onQuit={() => setNavigateToEnglishCard(true)} // Handle quit action
           />
         )
       )}
