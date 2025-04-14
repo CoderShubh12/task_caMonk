@@ -138,7 +138,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
               </div>
             </div>
             <div
-              className={`p-4 rounded-b-md ${
+              className={`p-4 rounded-bg-md ${
                 isCorrect ? "bg-green-50" : "bg-red-50"
               }`}
             >

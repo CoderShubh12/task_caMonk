@@ -22,7 +22,9 @@ const QuizScreen: React.FC = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch("http://localhost:3001/data");
+        const response = await fetch(
+          "https://backend-camonk.onrender.com/data"
+        );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
