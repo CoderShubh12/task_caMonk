@@ -92,7 +92,6 @@ const QuizScreen: React.FC = () => {
 
   return (
     <div>
-      <h1>Quiz</h1>
       {navigateToEnglishCard ? (
         <EnglishCard onStartClick={handleEnglishCardStart} />
       ) : quizFinished ? (
